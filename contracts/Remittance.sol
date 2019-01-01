@@ -1,60 +1,7 @@
 pragma solidity 0.4.24;
 
 import "./SafeMath.sol";
-
-contract Ownable {
-
-    address public owner;
-
-    event LogChangeOwner(address indexed newOwner, address indexed oldOwner);
-
-    modifier onlyOwner {
-        require(msg.sender == owner, "Error: only owner is allowed to do that");
-        _;
-    }
-
-    constructor() public {
-        owner = msg.sender;
-    }
-
-    function changeOwner(address newOwner) public onlyOwner returns (bool) {
-        require(newOwner != owner, "Error: already that owner");
-        emit LogChangeOwner(newOwner, msg.sender);
-        owner = newOwner;
-        return true;
-    }
-
-}
-
-contract Pausable is Ownable {
-
-    bool public isRunning;
-
-    event LogPauseContract(address indexed accountAddress);
-    event LogResumeContract(address indexed accountAddress);
-
-    modifier onlyIfRunning {
-        require(isRunning, "Error: contract paused");
-        _;
-    }
-
-    constructor() public {
-        isRunning = true;
-    }
-
-    function pauseContract() public onlyIfRunning onlyOwner returns(bool) {
-        emit LogPauseContract(msg.sender);
-        isRunning = false;
-        return true;
-    }
-
-    function resumeContract() public onlyOwner returns(bool) {
-        require(isRunning == false, "Error: contract already running");
-        emit LogResumeContract(msg.sender);
-        isRunning = true;
-        return true;
-    }
-}
+import "./Pausable.sol";
 
 contract Remittance is Pausable {
 
