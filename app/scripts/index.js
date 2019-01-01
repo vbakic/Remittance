@@ -158,6 +158,7 @@ const App = {
     let success = await this.followUpTransaction(txHash);
     if(success) {
       this.refreshBalances()
+      jQuery("#withdrawn").html("Funds you deposited to address " + receiver + " have been withdrawn").show().delay(5000).fadeOut()
     }    
   },
 
