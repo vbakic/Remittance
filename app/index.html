@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Remittance</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+  
+  <script src="./app.js"></script>
+</head>
+<body>
+
+    <div>
+        <button onclick="App.pauseContract()">Pause Splitter</button>
+        <button onclick="App.resumeContract()">Resume Splitter</button>
+        <span id="contractState">Running</span>
+    </div>
+
+    <div>
+        <label>New owner:</label>
+        <select id="ownerSelector">
+            <option selected="selected">0</option>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+        </select>
+        <button onclick="App.changeOwner()">Change Owner</button>
+        <br>
+        <span>Current Owner index:</span>
+        <input disabled="disabled" id="currentOwner" />
+    </div>
+
+    <div style="margin-top: 20px;">
+        <label>Sender:</label>
+        <select id="sender">
+            <option selected="selected">0</option>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Receiver:</label>
+        <select id="receiver">
+            <option>0</option>
+            <option selected="selected">1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+        </select>
+    </div>
+    
+    <div class="balance" style="margin-top: 20px;">
+        <label>Remittance balance (Ether):
+        <input disabled="disabled" id="Contract" />
+        </label>
+    </div>
+
+    <div class="balance" style="margin-top: 20px;">    
+        <h3>Sender</h3>    
+        <label>Balance (ether):
+            <input disabled="disabled" id="Sender" />
+        </label>
+    </div>   
+    
+    <div style="margin-top: 20px;">        
+        <input id="depositPassword1" value="salt" />
+        <input id="depositPassword2" value="pepper" />
+    </div> 
+
+    <div style="margin-top: 20px;">        
+        <input id="depositAmount" value="10" />
+        <button onclick="App.depositEther()">Deposit to Remittance (Ether)</button>
+    </div>   
+
+    <div style="margin-top: 20px;">
+        <button onclick="App.claimBackEther()">Claim Back Ether</button>
+    </div>
+
+    <div class="balance" style="margin-top: 20px;">
+        <h3>Exchange</h3>
+        <label>Contract Balance (ether):
+            <input disabled="disabled" id="ReceiverContractBalance" />
+        </label>
+        <br>
+        <label>Balance (ether):
+            <input disabled="disabled" id="Receiver" />
+        </label>
+        <br>
+        <label>Email password from Exchange</label>
+        <input id="withdrawPassword1" value="" />
+        <br>
+        <label>SMS password from local currency beneficiary</label>
+        <input id="withdrawPassword2" value="" />
+        <br>
+        <button onclick="App.withdrawEther()">Withdraw Ether</button>
+        <br>
+        <label>Email password:</label>
+        <span id="EmailPassword"></span>
+    </div>
+
+    <div class="balance" style="margin-top: 20px;">
+        <h3>Local currency receiver</h3>
+        <button onclick="App.acknowledgeFundsReceived()">Confirm received funds</button>
+        <br>
+        <label>SMS password:</label>
+        <span id="SMSPassword"></span>
+    </div>
+    
+    <style>
+        h3 {margin: 10px 0px; }
+        input {width: 130px}
+        div {margin: 5px}
+    </style>
+
+</body>
+</html>

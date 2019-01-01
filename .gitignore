@@ -1,0 +1,5 @@
+node_modules/*
+build/
+splitter.code-workspace
+package-lock.json
+package.json
