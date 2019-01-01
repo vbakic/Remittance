@@ -69,11 +69,11 @@ contract Remittance is Pausable {
 
     mapping (address => Account) public accounts;
 
-    event LogDepositEther(address indexed sender, address indexed receiver, uint amount, string password1, string password2);
-    event LogWithdrawEther(address indexed accountAddress, string password1, string password2);
+    event LogDepositEther(address indexed sender, address indexed receiver, uint amount, bytes32 password1, bytes32 password2);
+    event LogWithdrawEther(address indexed accountAddress, bytes32 password1, bytes32 password2);
     event LogClaimBackEther(address indexed sender, address indexed receiver, uint timestamp);
     
-    function depositEther(address receiver, string password1, string password2) public payable onlyIfRunning returns (bool success) {
+    function depositEther(address receiver, bytes32 password1, bytes32 password2) public payable onlyIfRunning returns (bool success) {
         require(receiver != address(0), "Error: invalid address");
         require(receiver != msg.sender, "Error: deposit to own account not permited");
         require(accounts[receiver].balance == 0, "Error: deposit not possible until existing funds are withdrawn");
@@ -97,7 +97,7 @@ contract Remittance is Pausable {
         return true;
     }
     
-    function withdrawEther(string password1, string password2) public payable onlyIfRunning returns (bool success) {
+    function withdrawEther(bytes32 password1, bytes32 password2) public payable onlyIfRunning returns (bool success) {
         require(accounts[msg.sender].balance != 0, "Error: insufficient funds");
         bytes32 hash = keccak256(abi.encodePacked(password1, password2));
         require(hash == accounts[msg.sender].hash, "Error: incorrect passwords");
