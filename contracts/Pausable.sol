@@ -4,7 +4,7 @@ import "./Ownable.sol";
 
 contract Pausable is Ownable {
 
-    bool public isRunning;
+    bool private isRunning;
 
     event LogPauseContract(address indexed accountAddress);
     event LogResumeContract(address indexed accountAddress);
@@ -18,16 +18,12 @@ contract Pausable is Ownable {
         isRunning = true;
     }
 
-    function pauseContract() public onlyIfRunning onlyOwner returns(bool) {
-        emit LogPauseContract(msg.sender);
-        isRunning = false;
-        return true;
+    function getState() public view onlyOwner returns (bool) {
+        return isRunning;
     }
 
-    function resumeContract() public onlyOwner returns(bool) {
-        require(isRunning == false, "Error: contract already running");
-        emit LogResumeContract(msg.sender);
-        isRunning = true;
+    function setState(bool newState) public onlyOwner returns (bool) {
+        isRunning = newState;
         return true;
     }
 }

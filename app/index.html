@@ -10,9 +10,12 @@
 <body>
 
     <div>
-        <button onclick="App.pauseContract()">Pause Splitter</button>
-        <button onclick="App.resumeContract()">Resume Splitter</button>
-        <span id="contractState">Running</span>
+        <button onclick="App.pauseContract()">Pause Contract</button>
+        <button onclick="App.resumeContract()">Resume Contract</button>
+        <span id="contractState"></span>
+        <button onclick="App.killContract()">Kill Contract</button>
+        <span>Is Alive?</span>
+        <span id="isAlive"></span>
     </div>
 
     <div>
@@ -42,13 +45,24 @@
     </div>
 
     <div>
-        <label>Receiver:</label>
-        <select id="receiver">
+        <label>Remitter:</label>
+        <select id="remitter">
             <option>0</option>
             <option selected="selected">1</option>
             <option>2</option>
             <option>3</option>
             <option>4</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Receiver:</label>
+        <select id="receiver">
+            <option selected="selected">Bob</option>
+            <option>Joshua</option>
+            <option>Mike</option>
+            <option>Lindsay</option>
+            <option>Mia</option>
         </select>
     </div>
     
@@ -61,7 +75,7 @@
     <div class="balance" style="margin-top: 20px;">    
         <h3>Sender</h3>    
         <label>Balance (ether):
-            <input disabled="disabled" id="Sender" />
+            <input disabled="disabled" id="SenderBalance" />
         </label>
     </div>   
     
@@ -82,16 +96,13 @@
     </div>
 
     <div class="balance" style="margin-top: 20px;">
-        <h3>Exchange</h3>
-        <label>Contract Balance (ether):
-            <input disabled="disabled" id="ReceiverContractBalance" />
-        </label>
-        <br>
+        <h3>Remitter</h3>
+        
         <label>Balance (ether):
-            <input disabled="disabled" id="Receiver" />
+            <input disabled="disabled" id="RemitterBalance" />
         </label>
         <br>
-        <label>Email password from Exchange</label>
+        <label>Email password from Remitter</label>
         <input id="withdrawPassword1" value="" />
         <br>
         <label>SMS password from local currency beneficiary</label>

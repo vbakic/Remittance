@@ -1,67 +1,64 @@
 pragma solidity 0.4.24;
 
 import "./SafeMath.sol";
-import "./Pausable.sol";
+import "./Mortal.sol";
 
-contract Remittance is Pausable {
+contract Remittance is Mortal {
 
     using SafeMath for uint;
     
-    struct Account {
+    struct Deposit {
+        address remitter;
+        bytes32 receiver;
         uint balance;
-        bytes32 hash;
-        uint timestamp;
+        uint blockNumber;
         address originalSender;
     }
 
-    mapping (address => Account) public accounts;
+    mapping (bytes32 => Deposit) public deposits;
 
-    event LogDepositEther(address indexed sender, address indexed receiver, uint amount, bytes32 password1, bytes32 password2);
-    event LogWithdrawEther(address indexed accountAddress, bytes32 password1, bytes32 password2);
-    event LogClaimBackEther(address indexed sender, address indexed receiver, uint timestamp);
-    
-    function depositEther(address receiver, bytes32 password1, bytes32 password2) public payable onlyIfRunning returns (bool success) {
-        require(receiver != address(0), "Error: invalid address");
-        require(receiver != msg.sender, "Error: deposit to own account not permited");
-        require(accounts[receiver].balance == 0, "Error: deposit not possible until existing funds are withdrawn");
-        emit LogDepositEther(msg.sender, receiver, msg.value, password1, password2);
-        accounts[receiver].hash = keccak256(abi.encodePacked(password1, password2));
-        accounts[receiver].balance = accounts[receiver].balance.add(msg.value);
-        accounts[receiver].timestamp = now;
-        accounts[receiver].originalSender = msg.sender;
-        return true;
-    }
+    event LogDepositEther(address indexed remitter, bytes32 indexed receiver, uint amount);
+    event LogWithdrawEther(address indexed remitter, bytes32 indexed receiver, uint amount);
+    event LogClaimBackEther(address indexed sender, uint amount);
 
-    function claimBackEther(address claimBackFrom) public payable onlyIfRunning returns (bool success) {
-        require(claimBackFrom != address(0), "Error: invalid address");
-        require(msg.sender == accounts[claimBackFrom].originalSender, "Error: only original sender can claim back funds");
-        require(now - accounts[claimBackFrom].timestamp < 30 minutes, "Error: claim back option expired");
-        uint amount = accounts[claimBackFrom].balance;
-        require(amount != 0, "Error: insufficient funds");
-        emit LogClaimBackEther(msg.sender, claimBackFrom, now);
-        accounts[claimBackFrom].balance = 0;
-        msg.sender.transfer(amount);
-        return true;
+    function calculateHash(bytes32 password1, bytes32 password2, address remitter, bytes32 receiver) public pure returns(bytes32 hash) {
+        require(remitter != address(0), "Error: invalid address");
+        return keccak256(abi.encodePacked(password1, password2, remitter, receiver));
     }
     
-    function withdrawEther(bytes32 password1, bytes32 password2) public payable onlyIfRunning returns (bool success) {
-        require(accounts[msg.sender].balance != 0, "Error: insufficient funds");
-        bytes32 hash = keccak256(abi.encodePacked(password1, password2));
-        require(hash == accounts[msg.sender].hash, "Error: incorrect passwords");
-        emit LogWithdrawEther(msg.sender, password1, password2);
-        uint amount = accounts[msg.sender].balance;
-        accounts[msg.sender].balance = 0;
-        msg.sender.transfer(amount);
+    function depositEther(bytes32 hash, address remitter, bytes32 receiver) public payable onlyIfRunning onlyIfAlive returns (bool success) {
+        uint balance = deposits[hash].balance;
+        require(msg.value != 0, "Error: no ether provided");
+        require(remitter != msg.sender, "Error: deposit to own account not permited");
+        emit LogDepositEther(remitter, receiver, msg.value);
+        deposits[hash].balance = balance.add(msg.value);
+        deposits[hash].remitter = remitter;
+        deposits[hash].receiver = receiver;
+        deposits[hash].blockNumber = block.number;
+        deposits[hash].originalSender = msg.sender;
         return true;
     }
 
-    function getAccountBalance() public view returns (uint) {
-        return accounts[msg.sender].balance;
-    }
-
-    function killContract() public onlyOwner returns (bool success) {
-        selfdestruct(owner);
+    function claimBackEther(bytes32 hash) public onlyIfRunning onlyIfAlive returns (bool success) {
+        require(msg.sender == deposits[hash].originalSender, "Error: only original sender can claim back funds");
+        require(block.number - deposits[hash].blockNumber < 30, "Error: claim back option expired");
+        uint balance = deposits[hash].balance;        
+        require(balance != 0, "Error: insufficient funds");
+        emit LogClaimBackEther(msg.sender, balance);
+        deposits[hash].balance = 0;
+        msg.sender.transfer(balance);
         return true;
     }
     
+    function withdrawEther(bytes32 hash) public onlyIfRunning returns (bool success) {
+        require(msg.sender == deposits[hash].remitter, "Error: requested funds are not yours");
+        uint balance = deposits[hash].balance;
+        require(balance != 0, "Error: no ether available or already withdrawn");
+        emit LogWithdrawEther(msg.sender, deposits[hash].receiver, balance);
+        deposits[hash].balance = 0;
+        msg.sender.transfer(balance);
+        return true;
+    }
+
+
 }

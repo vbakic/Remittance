@@ -10,6 +10,7 @@ const assert = require('assert-plus');
 
 let accounts
 let sender
+let remitter
 let receiver
 let instance
 let owner
@@ -22,7 +23,7 @@ window.addEventListener('load', function () {
   Promise.promisifyAll(web3.version, { suffix: "Promise" });
   App.start()
   window.App = App
-  jQuery("#sender, #receiver").change(() => {
+  jQuery("#sender, #remitter, #receiver").change(() => {
     App.update();
   })
 })
@@ -32,7 +33,8 @@ const App = {
   update: function() {
       console.log('update called!')
       sender = accounts[jQuery("#sender").val()]
-      receiver = accounts[jQuery("#receiver").val()]
+      remitter = accounts[jQuery("#remitter").val()]
+      receiver = jQuery("#receiver").val()
       this.refreshBalances()
   },
 
@@ -50,7 +52,8 @@ const App = {
     }
     else {
       sender = accounts[0]
-      receiver = accounts[1]
+      remitter = accounts[1]
+      receiver = jQuery("#receiver").val()
       self.refreshBalances()
     }
 
@@ -62,6 +65,14 @@ const App = {
     assert.strictEqual(parseInt(receipt.status), 1);
     console.log("Your transaction executed successfully!");
     return true;
+  },
+
+  killContract: async function () {
+    let txHash = await instance.killContract.sendTransaction({from: owner})
+    let success = await this.followUpTransaction(txHash);
+    if(success) {
+      jQuery("#isAlive").html("No");
+    }    
   },
 
   pauseContract: async function () {
@@ -94,7 +105,7 @@ const App = {
   },
 
   refreshOwnerInfo: async function () {
-    let ownerAdress = await instance.owner({from: owner})
+    let ownerAdress = await instance.getOwner({from: owner})
     for (let [index, element] of accounts.entries()) {
       if(element == ownerAdress) {
         owner = ownerAdress
@@ -113,23 +124,27 @@ const App = {
   },
 
   updateContractState: async function () {
-    let contractState = await instance.isRunning({from: owner})
+    let contractState = await instance.getState({from: owner})
     if(contractState) {
       jQuery('#contractState').html("Running")
     } else {
       jQuery('#contractState').html("Paused")
+    }
+    let isAlive = await instance.checkIsAlive({from: owner})
+    if(isAlive) {
+      jQuery('#isAlive').html("Yes")
+    } else {
+      jQuery('#isAlive').html("No")
     }
   },
 
   refreshAccountBalances: async function () {
 
     const senderBalance = await web3.eth.getBalancePromise(sender)
-    const receiverBalance = await web3.eth.getBalancePromise(receiver)
-    const receiverContractBalance = await instance.getAccountBalance({from: receiver})
+    const remitterBalance = await web3.eth.getBalancePromise(remitter)
 
-    jQuery("#Sender").val(convertToEther(senderBalance))
-    jQuery("#Receiver").val(convertToEther(receiverBalance))
-    jQuery("#ReceiverContractBalance").val(convertToEther(receiverContractBalance))
+    jQuery("#SenderBalance").val(convertToEther(senderBalance))
+    jQuery("#RemitterBalance").val(convertToEther(remitterBalance))
     
   },
 
@@ -139,7 +154,8 @@ const App = {
       let password2 = jQuery("#depositPassword2").val()
       const amountWei = convertToWei(jQuery("#depositAmount").val())
       if(amountWei > 0) {
-        let txHash = await instance.depositEther.sendTransaction(receiver, password1, password2, { from: sender, value: amountWei, gas: 120000 })
+        let hash = await instance.calculateHash(password1, password2, remitter, receiver, { from: sender })
+        let txHash = await instance.depositEther.sendTransaction(hash, remitter, receiver, { from: sender, value: amountWei, gas: 180000 })
         let success = await this.followUpTransaction(txHash);
         if(success) {
           self.refreshBalances()
@@ -154,16 +170,20 @@ const App = {
   withdrawEther: async function () {
     let password1 = jQuery("#withdrawPassword1").val()
     let password2 = jQuery("#withdrawPassword2").val()
-    let txHash = await instance.withdrawEther.sendTransaction( password1, password2, { from: receiver })
+    let hash = await instance.calculateHash(password1, password2, remitter, receiver, { from: remitter })
+    let txHash = await instance.withdrawEther.sendTransaction( hash, { from: remitter })
     let success = await this.followUpTransaction(txHash);
     if(success) {
       this.refreshBalances()
-      jQuery("#withdrawn").html("Funds you deposited to address " + receiver + " have been withdrawn").show().delay(5000).fadeOut()
+      jQuery("#withdrawn").html("Funds you deposited to address " + remitter + " have been withdrawn").show().delay(5000).fadeOut()
     }    
   },
 
   claimBackEther: async function () {
-    let txHash = await instance.claimBackEther.sendTransaction( receiver, { from: sender })
+    let password1 = jQuery("#depositPassword1").val()
+    let password2 = jQuery("#depositPassword2").val()
+    let hash = await instance.calculateHash(password1, password2, remitter, receiver, { from: sender })
+    let txHash = await instance.claimBackEther.sendTransaction( hash, { from: sender })
     let success = await this.followUpTransaction(txHash);
     if(success) {
       this.refreshBalances()
