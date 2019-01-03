@@ -4,7 +4,7 @@ import "./Ownable.sol";
 
 contract Pausable is Ownable {
 
-    bool private isRunning;
+    bool isRunning;
 
     event LogPauseContract(address indexed accountAddress);
     event LogResumeContract(address indexed accountAddress);
@@ -18,12 +18,7 @@ contract Pausable is Ownable {
         isRunning = true;
     }
 
-    function getState() public view onlyOwner returns (bool) {
+    function getState() public view returns (bool) {
         return isRunning;
-    }
-
-    function setState(bool newState) public onlyOwner returns (bool) {
-        isRunning = newState;
-        return true;
     }
 }

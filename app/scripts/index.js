@@ -97,6 +97,7 @@ const App = {
       let txHash = await instance.changeOwner.sendTransaction(accounts[index], {from: owner})
       let success = await this.followUpTransaction(txHash);
       if(success) {
+        owner = accounts[index];
         this.refreshOwnerInfo()
       }
     } else {
@@ -105,10 +106,9 @@ const App = {
   },
 
   refreshOwnerInfo: async function () {
-    let ownerAdress = await instance.getOwner({from: owner})
+    owner = await instance.getOwner({from: sender})
     for (let [index, element] of accounts.entries()) {
-      if(element == ownerAdress) {
-        owner = ownerAdress
+      if(element == owner) {
         jQuery("#currentOwner").val(index)
       }
     }
@@ -116,9 +116,9 @@ const App = {
 
   refreshBalances: async function () {
     const self = this
-    self.refreshAccountBalances()
-    self.updateContractState()
     self.refreshOwnerInfo()
+    self.refreshAccountBalances()
+    self.updateContractState()    
     const balance = await web3.eth.getBalancePromise(instance.address)
     jQuery('#Contract').val(convertToEther(balance))
   },

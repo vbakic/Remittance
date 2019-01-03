@@ -4,7 +4,7 @@ import "./Pausable.sol";
 
 contract Mortal is Pausable {
 
-    bool private isAlive;
+    bool private isAlive; //private instead of internal because its unused in child contract
 
     constructor() public {
         isAlive = true;
@@ -17,32 +17,34 @@ contract Mortal is Pausable {
 
     event LogKillContract(address killer);
 
-    function checkIsAlive() public view onlyOwner returns (bool) {
+    function checkIsAlive() public view returns (bool) {
         return isAlive;
     }
 
     function killContract() public onlyOwner onlyIfAlive returns (bool success) {
         emit LogKillContract(msg.sender);
-        setState(false); //pause contract first
+        isRunning = false; //pause contract first
         isAlive = false;
         return true;
     }
 
     function changeOwner(address newOwner) public onlyOwner onlyIfAlive returns (bool) {
-        setOwner(newOwner);
+        require(newOwner != owner, "Error: already that owner");
+        emit LogChangeOwner(newOwner);
+        owner = newOwner;
         return true;
     }
 
     function pauseContract() public onlyIfRunning onlyOwner onlyIfAlive returns(bool) {
         emit LogPauseContract(msg.sender);
-        setState(false);
+        isRunning = false;
         return true;
     }
 
     function resumeContract() public onlyOwner onlyIfAlive returns(bool) {
-        require(getState() == false, "Error: contract already running");
+        require(isRunning == false, "Error: contract already running");
         emit LogResumeContract(msg.sender);
-        setState(true);
+        isRunning = true;
         return true;
     }
 
