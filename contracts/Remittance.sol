@@ -1,9 +1,10 @@
 pragma solidity 0.4.24;
 
 import "./SafeMath.sol";
-import "./Mortal.sol";
+import "./Pausable.sol";
+import "./Ownable.sol";
 
-contract Remittance is Mortal {
+contract Remittance is Pausable, Ownable {
 
     using SafeMath for uint;
     
@@ -50,7 +51,8 @@ contract Remittance is Mortal {
         return true;
     }
     
-    function withdrawEther(bytes32 hash) public onlyIfRunning returns (bool success) {
+    function withdrawEther(bytes32 password1, bytes32 password2, address remitter, bytes32 receiver) public returns (bool success) {
+        bytes32 hash = calculateHash(password1, password2, remitter, receiver);
         require(msg.sender == deposits[hash].remitter, "Error: requested funds are not yours");
         uint balance = deposits[hash].balance;
         require(balance != 0, "Error: no ether available or already withdrawn");

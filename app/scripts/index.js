@@ -68,11 +68,14 @@ const App = {
   },
 
   killContract: async function () {
-    let txHash = await instance.killContract.sendTransaction({from: owner})
-    let success = await this.followUpTransaction(txHash);
-    if(success) {
-      jQuery("#isAlive").html("No");
-    }    
+    let pause = await this.pauseContract();
+    if(pause) {
+      let txHash = await instance.killContract.sendTransaction({from: owner})
+      let success = await this.followUpTransaction(txHash);
+      if(success) {
+        jQuery("#isAlive").html("No");
+      }
+    }
   },
 
   pauseContract: async function () {
@@ -80,7 +83,8 @@ const App = {
     let success = await this.followUpTransaction(txHash);
     if(success) {
       jQuery("#contractState").html("Paused");
-    }    
+    }
+    return true;
   },
 
   resumeContract: async function () {
@@ -170,13 +174,12 @@ const App = {
   withdrawEther: async function () {
     let password1 = jQuery("#withdrawPassword1").val()
     let password2 = jQuery("#withdrawPassword2").val()
-    let hash = await instance.calculateHash(password1, password2, remitter, receiver, { from: remitter })
-    let txHash = await instance.withdrawEther.sendTransaction( hash, { from: remitter })
+    let txHash = await instance.withdrawEther.sendTransaction(password1, password2, remitter, receiver, { from: remitter })
     let success = await this.followUpTransaction(txHash);
     if(success) {
       this.refreshBalances()
       jQuery("#withdrawn").html("Funds you deposited to address " + remitter + " have been withdrawn").show().delay(5000).fadeOut()
-    }    
+    }
   },
 
   claimBackEther: async function () {
@@ -187,7 +190,7 @@ const App = {
     let success = await this.followUpTransaction(txHash);
     if(success) {
       this.refreshBalances()
-    }    
+    }
   }
 
 }

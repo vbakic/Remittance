@@ -1,8 +1,8 @@
 pragma solidity 0.4.24;
 
-import "./Ownable.sol";
+import "./Mortal.sol";
 
-contract Pausable is Ownable {
+contract Pausable is Mortal {
 
     bool isRunning;
 
@@ -20,5 +20,18 @@ contract Pausable is Ownable {
 
     function getState() public view returns (bool) {
         return isRunning;
+    }
+
+    function pauseContract() public onlyIfRunning onlyOwner onlyIfAlive returns(bool) {
+        emit LogPauseContract(msg.sender);
+        isRunning = false;
+        return true;
+    }
+
+    function resumeContract() public onlyOwner onlyIfAlive returns(bool) {
+        require(isRunning == false, "Error: contract already running");
+        emit LogResumeContract(msg.sender);
+        isRunning = true;
+        return true;
     }
 }
