@@ -2,7 +2,7 @@ pragma solidity 0.4.24;
 
 import "./Mortal.sol";
 
-contract Ownable is Mortal {
+contract Transferrable is Mortal {
 
     event LogChangeOwner(address indexed newOwner);
 

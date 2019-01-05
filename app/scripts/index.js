@@ -11,7 +11,6 @@ const assert = require('assert-plus');
 let accounts
 let sender
 let remitter
-let receiver
 let instance
 let owner
 
@@ -23,7 +22,7 @@ window.addEventListener('load', function () {
   Promise.promisifyAll(web3.version, { suffix: "Promise" });
   App.start()
   window.App = App
-  jQuery("#sender, #remitter, #receiver").change(() => {
+  jQuery("#sender, #remitter").change(() => {
     App.update();
   })
 })
@@ -34,7 +33,6 @@ const App = {
       console.log('update called!')
       sender = accounts[jQuery("#sender").val()]
       remitter = accounts[jQuery("#remitter").val()]
-      receiver = jQuery("#receiver").val()
       this.refreshBalances()
   },
 
@@ -53,7 +51,6 @@ const App = {
     else {
       sender = accounts[0]
       remitter = accounts[1]
-      receiver = jQuery("#receiver").val()
       self.refreshBalances()
     }
 
@@ -68,13 +65,15 @@ const App = {
   },
 
   killContract: async function () {
-    let pause = await this.pauseContract();
-    if(pause) {
+    let contractState = await instance.getState({from: owner})
+    if(!contractState) { //only if paused
       let txHash = await instance.killContract.sendTransaction({from: owner})
       let success = await this.followUpTransaction(txHash);
       if(success) {
         jQuery("#isAlive").html("No");
       }
+    } else {
+      jQuery("#killError").html("Error: Contract needs to be paused first").show().delay(5000).fadeOut()
     }
   },
 
@@ -122,7 +121,8 @@ const App = {
     const self = this
     self.refreshOwnerInfo()
     self.refreshAccountBalances()
-    self.updateContractState()    
+    self.updateContractState()
+    self.updatePeriods()
     const balance = await web3.eth.getBalancePromise(instance.address)
     jQuery('#Contract').val(convertToEther(balance))
   },
@@ -142,6 +142,13 @@ const App = {
     }
   },
 
+  updatePeriods: async function () {
+    let revertPeriod = await instance.revertPeriod({from: owner});
+    let claimBackPeriod = await instance.claimBackPeriod({from: owner});
+    jQuery("#revertPeriod").val(revertPeriod);
+    jQuery("#claimBackPeriod").val(claimBackPeriod);    
+  },
+
   refreshAccountBalances: async function () {
 
     const senderBalance = await web3.eth.getBalancePromise(sender)
@@ -154,17 +161,18 @@ const App = {
 
   depositEther: async function () {
       const self = this
-      let password1 = jQuery("#depositPassword1").val()
-      let password2 = jQuery("#depositPassword2").val()
+      let password = jQuery("#depositPassword1").val() + jQuery("#depositPassword2").val()
+      console.log(password)
       const amountWei = convertToWei(jQuery("#depositAmount").val())
       if(amountWei > 0) {
-        let hash = await instance.calculateHash(password1, password2, remitter, receiver, { from: sender })
-        let txHash = await instance.depositEther.sendTransaction(hash, remitter, receiver, { from: sender, value: amountWei, gas: 180000 })
+        let hash = await instance.calculateHash(password, remitter, { from: sender })
+        console.log(hash)
+        let txHash = await instance.depositEther.sendTransaction(hash, remitter, { from: sender, value: amountWei, gas: 180000 })
         let success = await this.followUpTransaction(txHash);
         if(success) {
           self.refreshBalances()
-          jQuery("#EmailPassword").html(password1)
-          jQuery("#SMSPassword").html(password2)
+          jQuery("#EmailPassword").html(jQuery("#depositPassword1").val())
+          jQuery("#SMSPassword").html(jQuery("#depositPassword2").val())
         }
       } else {
         console.error("Error: only positive values acceptable!")
@@ -172,9 +180,8 @@ const App = {
   },
 
   withdrawEther: async function () {
-    let password1 = jQuery("#withdrawPassword1").val()
-    let password2 = jQuery("#withdrawPassword2").val()
-    let txHash = await instance.withdrawEther.sendTransaction(password1, password2, remitter, receiver, { from: remitter })
+    let password = jQuery("#withdrawPassword").val()
+    let txHash = await instance.withdrawEther.sendTransaction(password, { from: remitter })
     let success = await this.followUpTransaction(txHash);
     if(success) {
       this.refreshBalances()
@@ -183,16 +190,25 @@ const App = {
   },
 
   claimBackEther: async function () {
-    let password1 = jQuery("#depositPassword1").val()
-    let password2 = jQuery("#depositPassword2").val()
-    let hash = await instance.calculateHash(password1, password2, remitter, receiver, { from: sender })
+    let password = jQuery("#depositPassword1").val() + jQuery("#depositPassword2").val()
+    let hash = await instance.calculateHash(password, remitter, { from: sender })
     let txHash = await instance.claimBackEther.sendTransaction( hash, { from: sender })
     let success = await this.followUpTransaction(txHash);
     if(success) {
       this.refreshBalances()
     }
-  }
+  },
 
+  changeClaimBackPeriods: async function() {
+    let revertPeriod = jQuery("#revertPeriod").val()
+    let claimBackPeriod = jQuery("#claimBackPeriod").val()
+    let txHash = await instance.changeClaimBackPeriods.sendTransaction(
+        revertPeriod, claimBackPeriod, { from: owner })
+    let success = await this.followUpTransaction(txHash)
+    if(success) {
+      jQuery("#periodsUpdated").html("Periods have been updated").show().delay(5000).fadeOut()
+    }
+  }
 }
 
 function convertToEther(value) {

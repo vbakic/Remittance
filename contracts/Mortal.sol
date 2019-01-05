@@ -1,8 +1,8 @@
 pragma solidity 0.4.24;
 
-import "./BaseContract.sol";
+import "./Owned.sol";
 
-contract Mortal is BaseContract {
+contract Mortal is Owned {
 
     bool isAlive;
 

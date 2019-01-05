@@ -13,9 +13,24 @@
         <button onclick="App.pauseContract()">Pause Contract</button>
         <button onclick="App.resumeContract()">Resume Contract</button>
         <span id="contractState"></span>
+        <br>
         <button onclick="App.killContract()">Kill Contract</button>
         <span>Is Alive?</span>
         <span id="isAlive"></span>
+        <span id="killError"></span>
+    </div>
+
+    <div>
+        <label>Period for Revert of deposit:
+        <input id="revertPeriod" value="" />
+        </label>
+        <br>
+        <label>Period for Claim Back if funds weren't withdrawn
+        <input id="claimBackPeriod" value="" />
+        </label>
+        <br>
+        <button onclick="App.changeClaimBackPeriods()">Update Periods</button>
+        <span id="periodsUpdated"></span>
     </div>
 
     <div>
@@ -52,17 +67,6 @@
             <option>2</option>
             <option>3</option>
             <option>4</option>
-        </select>
-    </div>
-
-    <div>
-        <label>Receiver:</label>
-        <select id="receiver">
-            <option selected="selected">Bob</option>
-            <option>Joshua</option>
-            <option>Mike</option>
-            <option>Lindsay</option>
-            <option>Mia</option>
         </select>
     </div>
     
@@ -102,11 +106,8 @@
             <input disabled="disabled" id="RemitterBalance" />
         </label>
         <br>
-        <label>Email password from Remitter</label>
-        <input id="withdrawPassword1" value="" />
-        <br>
-        <label>SMS password from local currency beneficiary</label>
-        <input id="withdrawPassword2" value="" />
+        <label>Withdraw Password</label>
+        <input id="withdrawPassword" value="" />
         <br>
         <button onclick="App.withdrawEther()">Withdraw Ether</button>
         <br>

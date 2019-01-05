@@ -1,6 +1,6 @@
 pragma solidity 0.4.24;
 
-contract BaseContract {
+contract Owned {
 
     address owner;
 
