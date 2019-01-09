@@ -23,23 +23,22 @@ contract Remittance is Pausable, Transferrable {
     event LogWithdrawEther(address indexed remitter, uint amount);
     event LogClaimBackEther(address indexed sender, uint amount);
 
-    constructor() public {
-        revertPeriod = 10;
-        claimBackPeriod = 100;
+    constructor(uint defaultRevertPeriod, uint defaultClaimBackPeriod) public {
+        changeClaimBackPeriods(defaultRevertPeriod, defaultClaimBackPeriod);
     }
 
     function changeClaimBackPeriods(uint newRevertPeriod, uint newclaimBackPeriod) 
             public onlyOwner onlyIfAlive returns(bool success) {
+        require(newRevertPeriod != 0, "Error: RevertPeriod not provided / cannot be zero");
+        require(newclaimBackPeriod != 0, "Error: ClaimBackPeriod not provided / cannot be zero");
+        require(newclaimBackPeriod > newRevertPeriod, "Error: ClaimBackPeriod needs to longer than RevertPeriod");
         revertPeriod = newRevertPeriod;
         claimBackPeriod = newclaimBackPeriod;
         return true;
     }
 
-    function isEligibleForClaimBack(uint revertUntil, uint claimBackAfter) public view returns(bool) {
-        if( block.number <= revertUntil || block.number >= claimBackAfter ) {
-            return true;
-        }
-        return false;
+    function isEligibleForClaimBack(uint revertUntil, uint claimBackAfter) public view {
+        require(block.number <= revertUntil || block.number >= claimBackAfter, "Error: not eligible for claimback");
     }
 
     function calculateHash(bytes32 plainPassword, address remitter) public view returns(bytes32 hashedPassword) {
@@ -68,7 +67,7 @@ contract Remittance is Pausable, Transferrable {
         require(msg.sender == deposit.originalSender, "Error: only original sender can claim back funds");
         uint balance = deposit.balance;
         require(balance != 0, "Error: insufficient funds");
-        require(isEligibleForClaimBack(deposit.revertUntil, deposit.claimBackAfter), "Error: not eligible for claim back");
+        isEligibleForClaimBack(deposit.revertUntil, deposit.claimBackAfter);
         emit LogClaimBackEther(msg.sender, balance);
         deposit.balance = 0;
         deposits[hashedPassword] = deposit;
