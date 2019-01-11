@@ -3,3 +3,5 @@ build/
 splitter.code-workspace
 package-lock.json
 package.json
+app/web3.js
+webpack.config.js

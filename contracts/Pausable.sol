@@ -1,37 +1,56 @@
 pragma solidity 0.4.24;
 
-import "./Mortal.sol";
+import "./Ownable.sol";
 
-contract Pausable is Mortal {
+contract Pausable is Ownable {
 
-    bool isRunning;
+    enum PossibleStates { Running, Paused, Killed }
+    PossibleStates private state;
 
     event LogPauseContract(address indexed accountAddress);
     event LogResumeContract(address indexed accountAddress);
+    event LogKillContract(address indexed accountAddress);
 
     modifier onlyIfRunning {
-        require(isRunning, "Error: contract paused");
+        require(state == PossibleStates.Running, "Error: contract paused or killed");
         _;
     }
 
-    constructor() public {
-        isRunning = true;
+    modifier onlyIfAlive {
+        require(state != PossibleStates.Killed, "Error: contract killed");
+        _;
     }
 
-    function getState() public view returns (bool) {
-        return isRunning;
+    modifier onlyIfPaused {
+        require(state == PossibleStates.Paused, "Error: contract not paused");
+        _;
     }
 
-    function pauseContract() public onlyIfRunning onlyOwner onlyIfAlive returns(bool) {
+    constructor(uint8 initialState) public {
+        require(PossibleStates(initialState) != PossibleStates.Killed, "Error: contract cannot be killed at instantiation");
+        state = PossibleStates(initialState);
+    }
+
+    function getState() public view returns (uint8) {
+        return uint8(state);
+    }
+
+    function pauseContract() public onlyIfRunning onlyOwner returns(bool) {
         emit LogPauseContract(msg.sender);
-        isRunning = false;
+        state = PossibleStates.Paused;
         return true;
     }
 
-    function resumeContract() public onlyOwner onlyIfAlive returns(bool) {
-        require(isRunning == false, "Error: contract already running");
+    function resumeContract() public onlyOwner onlyIfPaused returns(bool) {
         emit LogResumeContract(msg.sender);
-        isRunning = true;
+        state = PossibleStates.Running;
         return true;
     }
+
+    function killContract() public onlyOwner onlyIfPaused returns (bool) {
+        emit LogKillContract(msg.sender);
+        state = PossibleStates.Killed;
+        return true;
+    }
+
 }

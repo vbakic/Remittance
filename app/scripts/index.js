@@ -8,14 +8,17 @@ const Contract = contract(ContractArtifact)
 const Promise = require("bluebird");
 const assert = require('assert-plus');
 
-let accounts
-let sender
-let remitter
-let instance
-let owner
+const contractStates = ["Running", "Paused", "Killed"]
+let accounts, sender, remitter, instance, owner
 
 window.addEventListener('load', function () {
-  window.web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'))
+  if (typeof window.web3 !== 'undefined') {
+      // Don't lose an existing provider, like Mist or Metamask
+      window.web3 = new Web3(web3.currentProvider);
+  } else {
+      // set the provider you want from Web3.providers
+      window.web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'))
+  }
   web3.eth.getTransactionReceiptMined = require("../../utils/getTransactionReceiptMined.js");
   // Promisify all functions of web3.eth and web3.version
   Promise.promisifyAll(web3.eth, { suffix: "Promise" });
@@ -65,15 +68,10 @@ const App = {
   },
 
   killContract: async function () {
-    let contractState = await instance.getState({from: owner})
-    if(!contractState) { //only if paused
-      let txHash = await instance.killContract.sendTransaction({from: owner})
-      let success = await this.followUpTransaction(txHash);
-      if(success) {
-        jQuery("#isAlive").html("No");
-      }
-    } else {
-      jQuery("#killError").html("Error: Contract needs to be paused first").show().delay(5000).fadeOut()
+    let txHash = await instance.killContract.sendTransaction({from: owner})
+    let success = await this.followUpTransaction(txHash);
+    if(success) {
+      jQuery("#contractState").html("Killed");
     }
   },
 
@@ -129,17 +127,7 @@ const App = {
 
   updateContractState: async function () {
     let contractState = await instance.getState({from: owner})
-    if(contractState) {
-      jQuery('#contractState').html("Running")
-    } else {
-      jQuery('#contractState').html("Paused")
-    }
-    let isAlive = await instance.checkIsAlive({from: owner})
-    if(isAlive) {
-      jQuery('#isAlive').html("Yes")
-    } else {
-      jQuery('#isAlive').html("No")
-    }
+    jQuery('#contractState').html(contractStates[contractState.toNumber()])
   },
 
   updatePeriods: async function () {
