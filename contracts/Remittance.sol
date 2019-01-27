@@ -18,9 +18,10 @@ contract Remittance is Pausable {
 
     mapping (bytes32 => Deposit) public deposits;
 
-    event LogDepositEther(address indexed sender, address indexed remitter, uint amount);
-    event LogWithdrawEther(address indexed remitter, uint amount);
-    event LogClaimBackEther(address indexed sender, uint amount);
+    event LogDepositEther(address indexed caller, address indexed remitter, uint amount);
+    event LogWithdrawEther(address indexed caller, uint amount);
+    event LogClaimBackEther(address indexed caller, uint amount);
+    event LogChangeClaimBackPeriods(address indexed caller, uint newRevertPeriod, uint newclaimBackPeriod);
 
     constructor(uint8 initialState, uint defaultRevertPeriod, uint defaultClaimBackPeriod) public Pausable(initialState) {
         changeClaimBackPeriods(defaultRevertPeriod, defaultClaimBackPeriod);
@@ -31,6 +32,7 @@ contract Remittance is Pausable {
         require(newRevertPeriod != 0, "Error: RevertPeriod not provided / cannot be zero");
         require(newclaimBackPeriod != 0, "Error: ClaimBackPeriod not provided / cannot be zero");
         require(newclaimBackPeriod > newRevertPeriod, "Error: ClaimBackPeriod needs to longer than RevertPeriod");
+        emit LogChangeClaimBackPeriods(msg.sender, newRevertPeriod, newclaimBackPeriod);
         revertPeriod = newRevertPeriod;
         claimBackPeriod = newclaimBackPeriod;
         return true;
@@ -40,7 +42,7 @@ contract Remittance is Pausable {
         return (block.number <= revertUntil || block.number >= claimBackAfter);
     }
 
-    function calculateHash(bytes32 plainPassword, address remitter) public view onlyIfAlive returns(bytes32 hashedPassword) {
+    function calculateHash(bytes32 plainPassword, address remitter) public view returns(bytes32 hashedPassword) {
         require(remitter != address(0), "Error: invalid address");
         return keccak256(abi.encodePacked(plainPassword, remitter, address(this)));
     }
@@ -75,7 +77,7 @@ contract Remittance is Pausable {
         return true;
     }
     
-    function withdrawEther(bytes32 plainPassword) public onlyIfAlive returns (bool success) {
+    function withdrawEther(bytes32 plainPassword) public onlyIfRunning returns (bool success) {
         //only remitter could create the hashedPassword, without passing its address
         bytes32 hashedPassword = calculateHash(plainPassword, msg.sender);
         uint balance = deposits[hashedPassword].balance;
